@@ -20,9 +20,14 @@ License: MIT + file LICENSE
 URL: https://github.com/KWB-R/kwb.svn
 BugReports: https://github.com/KWB-R/kwb.svn/issues
 Imports:
+    fs,
+    dplyr,
     kwb.utils,
     plyr,
-    XML
+    rlang,
+    stringr,
+    XML,
+    magrittr
 Suggests: 
     covr,
     knitr,

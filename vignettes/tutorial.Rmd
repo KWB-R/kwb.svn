@@ -19,32 +19,55 @@ knitr::opts_chunk$set(
 
 
 ```{r, eval = FALSE}
-
   info <- read.csv("svn.csv")
 
   options(svn_username = info$svn_username, 
           svn_password = info$svn_password, 
           svn_serverip = info$svn_serverip)
-  
+
+history_dir <-  file.path(kwb.utils::desktop(), "svn_rscripts")
+
+kwb.svn::read_files_history(tdir = history_dir)
+
+histories <- kwb.svn::read_histories(history_dir)
 
 
-  logdir <- file.path(kwb.utils::desktop(), "svn_log")
+
+
+logdir <- file.path(kwb.utils::desktop(), "svn_log")
   
   if(!exists(logdir)) dir.create(logdir)
   ### 1)get infos from "ente"
   ### 1a) size info (warning takes ~ 36 hours!!!!)
-  #   getRepoInfo(tDir = logdir, startRevision = 2, currentRevision = 1920,
+  #   kwb.svn::getRepoInfo(tDir = logdir, startRevision = 2, currentRevision = 3,
   #              logs = FALSE)
   ### 1b) log info
-  #getRepoInfo(tDir = logdir, 
+  # kwb.svn::getRepoInfo(tDir = logdir, 
   #            logs = FALSE)
   
-  logdata <- readLogFilesInDirectory(logdir)
+  svn_repo <- kwb.svn::default_repo(root_dir = kwb.svn::default_rscripts(),
+  kwb.svn::getRepoInfo(tDir = logdir, 
+                       startRevision = 1024, 
+                       currentRevision = 1200, #6294,
+                       repo = svn_repo) 
+  
+  logdata <- kwb.svn::readLogFilesInDirectory(logdir)
   logdata <- logdata[!duplicated(logdata$revision),]
   logdata$author <- as.factor(logdata$author)
   
   ### size info 
-  enteSize <- readSizeFiles(fDir = logdir, dbg = TRUE)
+  
+  sizedir <- file.path(kwb.utils::desktop(), "svn_size")
+  
+  if(!exists(sizedir)) dir.create(sizedir)
+  
+  kwb.svn::getRepoInfo(tDir = sizedir, 
+                       logs = FALSE,
+                       startRevision = 1024, 
+                       currentRevision = 1200, #6294,
+                       repo = svn_repo) 
+  
+  enteSize <- kwb.svn::readSizeFiles(fDir = logdir, dbg = TRUE)
   enteSize$size <- enteSize$size[enteSize$size$sumMB < 9000 & enteSize$size$sumMB > 1700,]
   enteSize$size <- enteSize$size[order(enteSize$size$revision),]
   
