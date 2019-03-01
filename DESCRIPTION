@@ -1,5 +1,5 @@
 Package: kwb.svn
-Title: Helper Functions for Migration from Svn to Git
+Title: Functions for Subversion
 Version: 0.0.0.9000
 Authors@R: 
     c(person(given = "Michael",
@@ -9,7 +9,7 @@ Authors@R:
              comment = c(ORCID = "0000-0003-0647-7726")),
       person(given = "Kompetenzzentrum Wasser Berlin gGmbH (KWB)",
              role = "cph"))
-Description: Helper Functions for Migration from Svn to Git.
+Description: Helper Functions for analysing Subversion log information.
 License: MIT + file LICENSE
 URL: https://github.com/KWB-R/kwb.svn
 BugReports: https://github.com/KWB-R/kwb.svn/issues
