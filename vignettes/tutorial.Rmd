@@ -27,9 +27,6 @@ knitr::opts_chunk$set(
           svn_serverip = info$svn_serverip)
   
 
-  
-  
-  logdir <- "//medusa/projekte$/Z-Exchange/Michael/Ente"
 
   logdir <- file.path(kwb.utils::desktop(), "svn_log")
   
