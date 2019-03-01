@@ -1,0 +1,126 @@
+---
+title: "Analyse SVN Logfiles"
+author: "Michael Rustler"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Analyse SVN Logfiles}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+
+
+```{r, eval = FALSE}
+
+  info <- read.csv("svn.csv")
+
+  options(svn_username = info$svn_username, 
+          svn_password = info$svn_password, 
+          svn_serverip = info$svn_serverip)
+  
+
+  
+  
+  logdir <- "//medusa/projekte$/Z-Exchange/Michael/Ente"
+
+  logdir <- file.path(kwb.utils::desktop(), "svn_log")
+  
+  if(!exists(logdir)) dir.create(logdir)
+  ### 1)get infos from "ente"
+  ### 1a) size info (warning takes ~ 36 hours!!!!)
+  #   getRepoInfo(tDir = logdir, startRevision = 2, currentRevision = 1920,
+  #              logs = FALSE)
+  ### 1b) log info
+  #getRepoInfo(tDir = logdir, 
+  #            logs = FALSE)
+  
+  logdata <- readLogFilesInDirectory(logdir)
+  logdata <- logdata[!duplicated(logdata$revision),]
+  logdata$author <- as.factor(logdata$author)
+  
+  ### size info 
+  enteSize <- readSizeFiles(fDir = logdir, dbg = TRUE)
+  enteSize$size <- enteSize$size[enteSize$size$sumMB < 9000 & enteSize$size$sumMB > 1700,]
+  enteSize$size <- enteSize$size[order(enteSize$size$revision),]
+  
+  enteSize$size$cumsumMB <- cumsum(enteSize$size$sumMB)
+  enteSize$size$diffMB <- c(0, diff(enteSize$size$sumMB))
+  
+  logdat <- merge(logdata, enteSize$size, by.x = "revision", by.y="revision", all.x=TRUE)
+  save(logdat,file = "svn.RData")
+  plot(revision ~ dateTimeUTC, data=logdat, pch=NA)
+  
+  legendtext <- levels(logdat$author)
+  
+  plotcolors <- rainbow(length(legendtext))
+  
+  legend(x = "topleft", legend = legendtext, fill = plotcolors)
+  
+  by(
+    data = logdat, 
+    INDICES = logdat$author, 
+    FUN = function(x) {
+      points(x$dateTimeUTC, x$revision, col = plotcolors[x$author])
+    }
+  )  
+  
+  inGB <- 1024
+  inTB <- 1024*1024
+  
+  plot(sumMB/inGB ~ dateTimeUTC, type = "p", col="blue", data=logdat, 
+       ylab="Speicherbedarf Ente (GB)", las=1)
+  
+  
+  max(logdat$size$cumsumMB)/ max(logdat$size$sumMB)
+  
+  lastcommits <- (nrow(enteSize$size)-10):nrow(enteSize$size)
+  plot(sumMB/inGB ~ revision, type = "p", col="blue", data=logdat[lastcommits,], 
+       ylab="Speicherbedarf (GB)", las=1)
+  
+  plot(cumsumMB/inGB ~ revision, type = "l", col="red", 
+       data=logdat, las=1,
+       xlab="Anzahl Kopien", 
+       ylab = "Speicherbedarf (in Gigabyte)", 
+       main="Happy Birthsday: 2 Jahre \"Ente\"")
+  lines(sumMB/inGB ~ revision, data=logdat, col="blue")
+  legend("topleft",
+         title = "Strategie:", 
+         legend = c("Copy & Paste", "Versionsverwaltung"), 
+         col = c("red", "blue"), 
+         lty = 1)
+  
+  res1 <- aggregate(revision ~ author, data = logdat,FUN = length)
+  res2 <- aggregate(diffMB ~ author, data = logdat,FUN = sum)
+  res <- merge(res1, res2)
+  res$MBperCommit <- res$diffMB/res$revision
+  myOrder <- order(res$revision)
+  par(oma = c(1,4,0,0))
+  barplot(100*res$revision[myOrder]/1920, 
+          names.arg = res$author[myOrder], 
+          horiz = TRUE, 
+          las=1,
+          xlab= "Prozentualer Anteil an Commits")
+  
+  teamOW2 <- c("hsonne", "asainz", "meslam", "vphili", "mrustl", "lburho")
+  res$team <- "others"
+  res$team[res$author %in% teamOW2] <- "OPTIWELLS-2"
+  
+  myOrder <- order(res$MBperCommit)
+  par(oma = c(1,4,0,0))
+  barplot(res$MBperCommit[myOrder], 
+          names.arg = res$author[myOrder], 
+          horiz = TRUE, 
+          las=1, 
+          xlab= "Speicherplatz (in MB) je Commit")
+  
+  
+  aggregate(revision ~ team, data = res,FUN = sum)
+```
