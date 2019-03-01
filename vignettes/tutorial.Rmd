@@ -32,6 +32,24 @@ kwb.svn::read_files_history(tdir = history_dir)
 histories <- kwb.svn::read_histories(history_dir)
 
 
+histories_file_user <- histories %>% 
+  dplyr::group_by(file, username) %>% 
+  dplyr::summarise(n_changes = dplyr::n(), 
+                   datetime_min = min(datetime), 
+                   datetime_max = max(datetime),
+                   lines_comments = sum(lines_deleted), 
+                   lines_deleted = sum(lines_deleted), 
+                   lines_added = sum(lines_added))
+
+histories_per_user <- histories %>% 
+  dplyr::group_by(username) %>% 
+  dplyr::summarise(n_changes = dplyr::nn(),
+                   datetime_min = min(datetime), 
+                   datetime_max = max(datetime),
+                   lines_comments = sum(lines_deleted), 
+                   lines_deleted = sum(lines_deleted), 
+                   lines_added = sum(lines_added))
+  
 
 
 logdir <- file.path(kwb.utils::desktop(), "svn_log")

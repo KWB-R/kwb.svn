@@ -6,9 +6,6 @@
 \usage{
 get_rscript_paths()
 }
-\arguments{
-\item{root_dir}{root directory (default: "svn/kwb/R_Development/trunk/R")}
-}
 \description{
 Default SVN Repository RScripts Paths
 }
