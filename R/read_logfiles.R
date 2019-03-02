@@ -120,9 +120,9 @@ extractEntryNameAndCommit <- function(entryName, entryCommit)
   childrens_text_value <- function(x) XML::xmlValue(xmlChildren(x)$text)
   
   kwb.utils::noFactorDataFrame(
-    name = xml_value_of_text(entryName),
-    author = xml_value_of_text(commitInfo$author),
-    date = xml_value_of_text(commitInfo$date)
+    name = childrens_text_value(entryName),
+    author = childrens_text_value(commitInfo$author),
+    date = childrens_text_value(commitInfo$date)
   )
 }
 
@@ -227,19 +227,13 @@ getRevisionInfo <- function(
 #' path to target directory 
 #' @export
 getRepoInfo <- function(
-  currentRevision = 1920, 
-  startRevision = 2, 
-  tDir = tempdir(),
-  repo = default_repo(), 
-  logs = TRUE, 
-  dbg = TRUE
+  currentRevision = 1920, startRevision = 2, tDir = tempdir(), 
+  repo = default_repo(), logs = TRUE, dbg = TRUE
 )
 {
   for (i in  startRevision:currentRevision) { 
     
-    getRevisionInfo(
-      revision = i, tDir = tDir, repo = repo, logs = logs, dbg = dbg
-    )
+    getRevisionInfo(i, tDir = tDir, repo = repo, logs = logs, dbg = dbg)
   }
   
   tDir
@@ -260,13 +254,16 @@ readSizeFiles <- function (fDir, fPattern = "ente_r", dbg = FALSE)
   x$size <- data.frame()
   x$sizePerFile <- NULL
   
-  files <- dir(fDir,pattern = fPattern, full.names = TRUE)
-  fileNames <- dir(fDir,pattern = fPattern, full.names = FALSE)
+  files <- dir(fDir, pattern = fPattern, full.names = TRUE)
+  fileNames <- dir(fDir, pattern = fPattern, full.names = FALSE)
   revisions <- as.numeric(gsub(pattern = "ente_r|.txt", "", fileNames))
   
-  for (id in seq_len(length(files))) {
+  for (id in seq_along(files)) {
+    
     revision <- revisions[id]
-    if (dbg) cat(sprintf("R %4d : ", revision))
+    
+    kwb.utils::catIf(dbg, sprintf("R %4d : ", revision))
+    
     fileSize <- readLines(con = files[id]) 
     condition <- grep(pattern = "<size>|</size>", x = fileSize)
     fileSize <- fileSize[condition]
@@ -274,20 +271,25 @@ readSizeFiles <- function (fDir, fPattern = "ente_r", dbg = FALSE)
     sizes <- as.numeric(gsub("<size>|</size>", replacement = "", x = fileSize))
     
     ### convert from byte to  MB
-    sizesInMB <- sizes * 10^-6
+    sizesInMB <- sizes / (1024^2)
     x$sizePerFile[[revision]] <- sizesInMB
     
-    size  <- data.frame(revision=revision, 
-                        sumMB = sum(sizesInMB, na.rm=TRUE),
-                        maxMB = max(sizesInMB, na.rm=TRUE))
+    size  <- data.frame(
+      revision = revision, 
+      sumMB = sum(sizesInMB, na.rm = TRUE),
+      maxMB = max(sizesInMB, na.rm = TRUE)
+    )
+    
     x$size <- plyr::rbind.fill(x$size, size)
     
-    if (dbg) cat(sprintf("%6.3f (MB) max: %6.3f (MB)\n", size$sumMB , size$maxMB))
+    kwb.utils::catIf(dbg, sprintf(
+      "%6.3f (MB) max: %6.3f (MB)\n", size$sumMB , size$maxMB
+    ))
   }
   
-  x$size <- x$size[order(x$size$revision),]
+  x$size <- x$size[order(x$size$revision), ]
   
-  return(x)
+  x
 }
 
 #' Read SVN History For Files
@@ -344,11 +346,11 @@ read_files_history <- function(
 
 read_histories <- function(history_dir)
 {
-  history_paths <- fs::dir_info(
+  paths <- fs::dir_info(
     history_dir, recursive = TRUE, all = FALSE, type = "file"
   )$path
   
-  result <- lapply(history_paths, function(history_path) {
+  result <- lapply(paths, function(history_path) {
     
     print(history_path)
     
@@ -357,14 +359,11 @@ read_histories <- function(history_dir)
     author_start <- which(stringr::str_detect(
       history_script, pattern = "^r[0-9]{4} \\| "
     ))
+
+    which_detect <- function(x, p) which(stringr::str_detect(x, pattern = p))
     
-    start <- which(stringr::str_detect(
-      history_script, pattern = "^==========="
-    ))
-    
-    end <- c(which(stringr::str_detect(
-      history_script, pattern = "^-------------"
-    ))[-1])
+    start <- which_detect(history_script, "^===========")
+    end <- c(which_detect(history_script, "^-------------")[-1])
     
     if (length(author_start) > length(start)) {
       n_rep <- length(author_start) - length(start)
