@@ -30,44 +30,39 @@ readLogFilesInDirectory <- function(logdir, pattern = "_log_")
 #'
 #' @param logfile logfile
 #' @return logfile
-#' @importFrom  kwb.utils safeRowBind
+#' @importFrom dplyr bind_rows
 #' @importFrom XML xmlTreeParse xmlChildren
 #' @export
 
 readLogFile <- function(logfile)
 {
-  cat("Reading", basename(logfile), "... ")
-  
-  xmllines <- readLines(logfile)
-  
-  indices <- c(grep("^<\\?xml", xmllines), length(xmllines) + 1)
-  
-  xmls <- list()
-  
-  for (i in seq_len(length(indices) - 1)) {
-    xmls[[i]] <- xmllines[seq(indices[i], indices[i+1] - 1)]
-  }
-  
-  xmltexts <- sapply(xmls, function(x) paste(x, collapse = "\n"))
-  
-  xmltexts <- xmltexts[!duplicated(xmltexts)]
-  
-  commitInfo <- NULL
-  
-  for (xmltext in xmltexts) {
+  kwb.utils::catAndRun(
     
-    xmltree <- XML::xmlTreeParse(xmltext, asText = TRUE)
+    messageText = paste0("Reading", basename(logfile)), 
     
-    commits <- XML::xmlChildren(xmltree$doc$children$lists)
-    
-    numberOfCommits <- length(commits)  
-    
-    commitInfo <- kwb.utils::safeRowBind(commitInfo, extractCommitInfo(commits))
-  }
-  
-  cat("ok.\n")
-  
-  commitInfo  
+    expr = {
+      
+      xmllines <- readLines(logfile)
+      
+      indices <- c(grep("^<\\?xml", xmllines), length(xmllines) + 1)
+      
+      xmls <- lapply(seq_len(length(indices) - 1), function(i) {
+        
+        xmllines[seq(indices[i], indices[i + 1] - 1)]
+      })
+      
+      xmltexts <- sapply(xmls, paste, collapse = "\n")
+      
+      xmltexts <- xmltexts[! duplicated(xmltexts)]
+      
+      dplyr::bind_rows(lapply(xmltexts, function(xmltext) {
+        
+        xmltree <- XML::xmlTreeParse(xmltext, asText = TRUE)
+        
+        extractCommitInfo(XML::xmlChildren(xmltree$doc$children$lists))
+      }))
+    }
+  )  
 }
 
 # extractCommitInfo ------------------------------------------------------------
