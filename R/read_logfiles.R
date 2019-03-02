@@ -158,13 +158,10 @@ default_rscripts <- function()
 #'
 #' @export
 
-get_rscript_paths <- function() {
-  
-  cmd <- sprintf("svn ls -R %s", default_rscripts())
-  
-  paths <- shell(cmd = cmd, intern = TRUE) 
-  
-  paths %>% 
+get_rscript_paths <- function()
+{
+  sprintf("svn ls -R %s", default_rscripts()) %>%
+    shell(intern = TRUE) %>% 
     stringr::str_subset("/$", negate = TRUE) %>%  
     stringr::str_subset("\\.[rR]([mM][dD])?$") %>% 
     stringr::str_subset("\\.$", negate = TRUE)
