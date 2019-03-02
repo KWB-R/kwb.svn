@@ -155,21 +155,21 @@ extractEntryNameAndCommit <- function(entryName, entryCommit)
 #' @return string to svn repo with login
 #' @export
 
-default_repo <- function(root_dir = "svn/kwb", 
-                         username = getOption("svn_username"), 
-                         password = getOption("svn_password"),
-                         serverip = getOption("svn_serverip")) {
-  
- sprintf("http://%s:%s@%s/%s",  username, password, serverip, root_dir) 
-
-
+default_repo <- function(
+  root_dir = "svn/kwb", 
+  username = getOption("svn_username"), 
+  password = getOption("svn_password"),
+  serverip = getOption("svn_serverip")
+)
+{
+  sprintf("http://%s:%s@%s/%s",  username, password, serverip, root_dir)
 }
 
 #' Default SVN Repository RScripts
 #' @export
 
-default_rscripts <- function() {
-  
+default_rscripts <- function()
+{
   default_repo(root_dir = "svn/kwb/R_Development/trunk/RScripts")
 }
 
@@ -179,19 +179,15 @@ default_rscripts <- function() {
 
 get_rscript_paths <- function() {
   
-  cmd <- sprintf("svn ls -R %s", 
-                 default_rscripts()
-                 )
+  cmd <- sprintf("svn ls -R %s", default_rscripts())
   
-  paths <- shell(cmd = cmd,intern = TRUE) 
+  paths <- shell(cmd = cmd, intern = TRUE) 
   
   paths %>% 
-  stringr::str_subset("/$", negate = TRUE) %>%  
-  stringr::str_subset("\\.[rR]([mM][dD])?$") %>% 
-  stringr::str_subset("\\.$", negate = TRUE)
+    stringr::str_subset("/$", negate = TRUE) %>%  
+    stringr::str_subset("\\.[rR]([mM][dD])?$") %>% 
+    stringr::str_subset("\\.$", negate = TRUE)
 }
-
-
 
 # getRevisionInfo---------------------------------------------------------------
 #' Get Revision Information
@@ -203,18 +199,20 @@ get_rscript_paths <- function() {
 #' @param dbg debug messages (default: TRUE)
 #' @return revision infos
 #' @export
-getRevisionInfo <- function (revision,
-                             tDir = tempdir(),
-                             repo = default_repo(), 
-                             logs = TRUE,
-                             ### if TRUE logs info is extracted, if FALSE size info
-                             dbg = TRUE
-) {
-  
+getRevisionInfo <- function(
+  revision,
+  tDir = tempdir(),
+  repo = default_repo(), 
+  logs = TRUE,
+  ### if TRUE logs info is extracted, if FALSE size info
+  dbg = TRUE
+)
+{
   recursive <- "--recursive"
   fPrefix <- "ente"
   sizeToGrep <- "| grep size"
   label <- "size"
+  
   if (logs) {
     recursive <- ""
     fPrefix <- paste0(fPrefix, "_log")
@@ -225,18 +223,16 @@ getRevisionInfo <- function (revision,
   tName <- sprintf("%s_r%d.txt", fPrefix, revision)
   tPath <- file.path(tDir, tName)
   
+  cmd <- sprintf(
+    "svn list --xml %s -r%d %s %s > \"%s\"", 
+    recursive, revision, repo, sizeToGrep, tPath
+  )
   
-  cmd <- sprintf("svn list --xml %s -r%d %s %s > \"%s\"", 
-                 recursive,
-                 revision,
-                 repo, 
-                 sizeToGrep, 
-                 tPath)
+  msg <- sprintf(
+    "Get '%s' of r %d from repo %s ...",  
+    label, revision, repo
+  )
   
-  msg <- sprintf("Get '%s' of r %d from repo %s ...",  
-                 label, 
-                 revision, 
-                 repo)
   if (dbg) cat(msg)
   shell(cmd = cmd )
   if (dbg) cat("Done!\n") 
@@ -256,21 +252,22 @@ getRevisionInfo <- function (revision,
 #' @return writes files with repo log info into target directory and returns 
 #' path to target directory 
 #' @export
-getRepoInfo <- function (currentRevision = 1920, 
-                         startRevision = 2, 
-                         tDir = tempdir(),
-                         repo = default_repo(), 
-                         logs = TRUE, 
-                         dbg = TRUE) {
-  
+getRepoInfo <- function(
+  currentRevision = 1920, 
+  startRevision = 2, 
+  tDir = tempdir(),
+  repo = default_repo(), 
+  logs = TRUE, 
+  dbg = TRUE
+)
+{
   for (i in  startRevision:currentRevision) { 
-    getRevisionInfo(revision = i, 
-                    tDir = tDir, 
-                    repo = repo,
-                    logs = logs, 
-                    dbg = dbg)
     
+    getRevisionInfo(
+      revision = i, tDir = tDir, repo = repo, logs = logs, dbg = dbg
+    )
   }
+  
   tDir
 }
 
@@ -283,10 +280,8 @@ getRepoInfo <- function (currentRevision = 1920,
 #' @export
 #' @importFrom plyr rbind.fill
 #' 
-readSizeFiles <- function (fDir,
-                           fPattern = "ente_r", 
-                           dbg = FALSE) {
-  
+readSizeFiles <- function (fDir, fPattern = "ente_r", dbg = FALSE) 
+{
   x <- list()
   x$size <- data.frame()
   x$sizePerFile <- NULL
@@ -294,6 +289,7 @@ readSizeFiles <- function (fDir,
   files <- dir(fDir,pattern = fPattern, full.names = TRUE)
   fileNames <- dir(fDir,pattern = fPattern, full.names = FALSE)
   revisions <- as.numeric(gsub(pattern = "ente_r|.txt", "", fileNames))
+  
   for (id in seq_len(length(files))) {
     revision <- revisions[id]
     if (dbg) cat(sprintf("R %4d : ", revision))
@@ -316,6 +312,7 @@ readSizeFiles <- function (fDir,
   }
   
   x$size <- x$size[order(x$size$revision),]
+  
   return(x)
 }
 
@@ -328,33 +325,36 @@ readSizeFiles <- function (fDir,
 #' @return writes history files to target directory and returns target directory
 #' @export
 #' @importFrom fs dir_exists dir_create
-read_files_history <- function(file_paths = get_rscript_paths(), 
-                               repo = default_rscripts(), 
-                               tdir = tempdir(), dbg = TRUE) {
-
+read_files_history <- function(
+  file_paths = get_rscript_paths(), 
+  repo = default_rscripts(), 
+  tdir = tempdir(), 
+  dbg = TRUE
+)
+{
   target_dirs <- file.path(tdir, unique(dirname(file_paths)))
   
   fs::dir_create(target_dirs[! file.exists(target_dirs)], recursive = TRUE)
-
-sapply(file_paths, FUN = function(file_path) {  
-fpath <- file.path(repo, file_path)
-
-
-cmd <- sprintf("svn log --diff %s > \"%s\"", 
-               file.path(repo, file_path),
-               file.path(tdir, file_path)
-               )
-
-msg <- sprintf("Get '%s' from repo %s and export to %s",  
-               file_path, 
-               repo,
-               tdir)
-
-if (dbg) cat(msg)
-shell(cmd = cmd )
-if (dbg) cat("Done!\n") 
-})
-tdir
+  
+  sapply(file_paths, FUN = function(file_path) {  
+    fpath <- file.path(repo, file_path)
+    
+    cmd <- sprintf(
+      "svn log --diff %s > \"%s\"", 
+      file.path(repo, file_path), file.path(tdir, file_path)
+    )
+    
+    msg <- sprintf(
+      "Get '%s' from repo %s and export to %s", file_path, repo, tdir
+    )
+    
+    if (dbg) cat(msg)
+    shell(cmd = cmd )
+    if (dbg) cat("Done!\n") 
+    
+  })
+  
+  tdir
 }
 
 #' Read Histories
@@ -368,41 +368,41 @@ tdir
 #' @importFrom stringr str_detect str_subset str_remove str_split
 #' @importFrom fs dir_info
 
-read_histories <- function(history_dir) {
-  
-  history_paths <- fs::dir_info(history_dir,
-                                recursive = TRUE, 
-                                all = FALSE, 
-                                type = "file")$path
-  
+read_histories <- function(history_dir)
+{
+  history_paths <- fs::dir_info(
+    history_dir, recursive = TRUE, all = FALSE, type = "file"
+  )$path
   
   result <- lapply(history_paths, function(history_path) {
+    
     print(history_path)
-
+    
     history_script <- readLines(history_path)
     
+    author_start <- which(stringr::str_detect(
+      history_script, pattern = "^r[0-9]{4} \\| "
+    ))
     
-    author_start <- which(stringr::str_detect(history_script, 
-                                              pattern = "^r[0-9]{4} \\| "))
-
-    start <- which(stringr::str_detect(history_script, pattern = "^==========="))
+    start <- which(stringr::str_detect(
+      history_script, pattern = "^==========="
+    ))
     
-    end <- c(which(stringr::str_detect(history_script, 
-                                       pattern = "^-------------"))[-1])
+    end <- c(which(stringr::str_detect(
+      history_script, pattern = "^-------------"
+    ))[-1])
     
-    
-    if(length(author_start) > length(start)) {
+    if (length(author_start) > length(start)) {
       n_rep <- length(author_start) - length(start)
-      
       start <- c(start, rep(author_start[length(author_start)],n_rep))
     }
-    if(length(author_start) > length(end)) {
+    
+    if (length(author_start) > length(end)) {
       n_rep <- length(author_start) - length(end)
-      
       end <- c(end, rep(author_start[length(author_start)],n_rep))
     }
     
-    if(length(author_start) < length(end)) {
+    if (length(author_start) < length(end)) {
       n_drop <- length(end) - length(author_start) 
       end <- end[1:(length(end)-n_drop)]
     }
@@ -422,22 +422,22 @@ read_histories <- function(history_dir) {
         lines_start = start, 
         lines_end = end, 
         lines_added = NA_integer_,
-        lines_deleted = NA_integer_)
+        lines_deleted = NA_integer_
+      )
     
-    for(i in seq_len(nrow(hist_log_df))) {
-     sel_lines <- history_script[hist_log_df$lines_start[i]:hist_log_df$lines_end[i]]
-     added <- sum(stringr::str_detect(sel_lines, pattern = "^+"))
-     deleted <- sum(stringr::str_detect(sel_lines, pattern = "^-"))
-                    
-     hist_log_df$lines_added[i] <- ifelse(added > 0, added, NA_integer_)
-    hist_log_df$lines_deleted[i]  <- ifelse(deleted > 0, deleted, NA_integer_)
+    for (i in seq_len(nrow(hist_log_df))) {
+      
+      sel_lines <- history_script[hist_log_df$lines_start[i]:hist_log_df$lines_end[i]]
+      
+      added <- sum(stringr::str_detect(sel_lines, pattern = "^+"))
+      deleted <- sum(stringr::str_detect(sel_lines, pattern = "^-"))
+      
+      hist_log_df$lines_added[i] <- ifelse(added > 0, added, NA_integer_)
+      hist_log_df$lines_deleted[i]  <- ifelse(deleted > 0, deleted, NA_integer_)
     }
     
     hist_log_df
-  
   })
-
+  
   dplyr::bind_rows(result)
-
 }
-
