@@ -116,10 +116,13 @@ extractEntryNameAndCommit <- function(entryName, entryCommit)
 {
   commitInfo <- XML::xmlChildren(entryCommit)
   
+  # Define helper function
+  childrens_text_value <- function(x) XML::xmlValue(xmlChildren(x)$text)
+  
   kwb.utils::noFactorDataFrame(
-    name = XML::xmlValue(xmlChildren(entryName)$text),
-    author = XML::xmlValue(xmlChildren(commitInfo$author)$text),
-    date = XML::xmlValue(xmlChildren(commitInfo$date)$text)
+    name = xml_value_of_text(entryName),
+    author = xml_value_of_text(commitInfo$author),
+    date = xml_value_of_text(commitInfo$date)
   )
 }
 
