@@ -173,48 +173,44 @@ get_rscript_paths <- function()
 #' @param revision revision number
 #' @param tDir target directory
 #' @param repo repository
-#' @param logs if TRUE logs info is extracted, if FALSE size info (default: TRUE)
+#' @param logs if TRUE logs info is extracted, if FALSE size info (default:
+#'   TRUE)
 #' @param dbg debug messages (default: TRUE)
 #' @return revision infos
 #' @export
+#' @importFrom kwb.utils catAndRun
 getRevisionInfo <- function(
-  revision,
-  tDir = tempdir(),
-  repo = default_repo(), 
-  logs = TRUE,
-  ### if TRUE logs info is extracted, if FALSE size info
-  dbg = TRUE
+  revision, tDir = tempdir(), repo = default_repo(), logs = TRUE, dbg = TRUE
 )
 {
-  recursive <- "--recursive"
-  fPrefix <- "ente"
-  sizeToGrep <- "| grep size"
-  label <- "size"
-  
   if (logs) {
+    
     recursive <- ""
     fPrefix <- paste0(fPrefix, "_log")
     sizeToGrep <- ""
     label <- "commit info"
-  }  
+    
+  } else {
+    
+    recursive <- "--recursive"
+    fPrefix <- "ente"
+    sizeToGrep <- "| grep size"
+    label <- "size"
+  }
   
-  tName <- sprintf("%s_r%d.txt", fPrefix, revision)
-  tPath <- file.path(tDir, tName)
+  target_path <- file.path(tDir, sprintf("%s_r%d.txt", fPrefix, revision))
   
   cmd <- sprintf(
     "svn list --xml %s -r%d %s %s > \"%s\"", 
-    recursive, revision, repo, sizeToGrep, tPath
+    recursive, revision, repo, sizeToGrep, target_path
   )
   
   msg <- sprintf(
-    "Get '%s' of r %d from repo %s ...",  
-    label, revision, repo
+    "Get '%s' of r %d from repo %s ...",  label, revision, repo
   )
   
-  if (dbg) cat(msg)
-  shell(cmd = cmd )
-  if (dbg) cat("Done!\n") 
-  
+  kwb.utils::catAndRun(dbg = dbg, messageText = msg, expr = shell(cmd = cmd))
+
   tDir
 }
 
