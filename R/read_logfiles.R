@@ -84,35 +84,23 @@ extractCommitInfo <- function(commits)
 #'
 #' @param commit commit number
 #' @importFrom XML xmlChildren xmlAttrs
+#' @importfrom dplyr bind_rows
 #' @return data frame with commit information
 #' @export
 #' 
 extractCommit <- function(commit)
 {
-  result <- NULL
-  
-  entries <- xmlChildren(commit)
-  
-  for (entry in entries) {
+  dplyr::bind_rows(lapply(xmlChildren(commit), function(x) {
     
-    entryParts <- XML::xmlChildren(entry)
+    parts <- XML::xmlChildren(x)
     
-    basicinfo <- data.frame(
-      revision = as.integer(XML::xmlAttrs(entryParts$commit)["revision"]),
-      kind = XML::xmlAttrs(entry)["kind"],
-      stringsAsFactors = FALSE
+    info <- kwb.utils::noFactorDataFrame(
+      revision = as.integer(XML::xmlAttrs(parts$commit)["revision"]),
+      kind = XML::xmlAttrs(x)["kind"]
     )
     
-    result <- rbind(
-      result, 
-      cbind(
-        basicinfo,
-        extractEntryNameAndCommit(entryParts$name, entryParts$commit)
-      )
-    )
-  }
-  
-  result
+    cbind(info, extractEntryNameAndCommit(parts$name, parts$commit))
+  }))
 }
 
 # extractEntryNameAndCommit ----------------------------------------------------
