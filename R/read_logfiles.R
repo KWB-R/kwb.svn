@@ -85,6 +85,7 @@ extractCommitInfo <- function(commits)
 #' @param commit commit number
 #' @importFrom XML xmlChildren xmlAttrs
 #' @importfrom dplyr bind_rows
+#' @importFrom kwb.utils noFactorDataFrame
 #' @return data frame with commit information
 #' @export
 #' 
@@ -109,16 +110,16 @@ extractCommit <- function(commit)
 #' @param entryCommit entryCommit
 #' @return data.frame with name, author and data
 #' @export
-#' @importFrom XML xmlChildren xmlValue 
+#' @importFrom XML xmlChildren xmlValue
+#' @importFrom kwb.utils noFactorDataFrame
 extractEntryNameAndCommit <- function(entryName, entryCommit)
 {
   commitInfo <- XML::xmlChildren(entryCommit)
   
-  data.frame(
+  kwb.utils::noFactorDataFrame(
     name = XML::xmlValue(xmlChildren(entryName)$text),
     author = XML::xmlValue(xmlChildren(commitInfo$author)$text),
-    date = XML::xmlValue(xmlChildren(commitInfo$date)$text),
-    stringsAsFactors = FALSE
+    date = XML::xmlValue(xmlChildren(commitInfo$date)$text)
   )
 }
 
