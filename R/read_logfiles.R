@@ -4,22 +4,19 @@
 #' @param logdir directory containing svn log information
 #' @param pattern pattern (default: "_log_")
 #' @return data frame with svn log data 
+#' @importFrom kwb.utils resetRowNames
 #' @export
 readLogFilesInDirectory <- function(logdir, pattern = "_log_")
 {
   logfiles <- dir(logdir, pattern = pattern, full.names = TRUE)
   
-  loginfo <- lapply(logfiles, FUN = readLogFile)
-  
-  logdata <- do.call(rbind, args = loginfo)
+  logdata <- do.call(rbind, lapply(logfiles, readLogFile))
   
   logdata$dateTimeUTC <- as.POSIXct(
     substr(logdata$date, 1, 19), format = "%Y-%m-%dT%H:%M:%S", tz = "UTC"
   )
   
-  row.names(logdata) <- NULL
-  
-  logdata[order(logdata$dateTimeUTC), ]
+  kwb.utils::resetRowNames(logdata[order(logdata$dateTimeUTC), ])
 }
 
 # readLogFile ------------------------------------------------------------------
