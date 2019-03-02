@@ -4,22 +4,25 @@
 #' @param logdir directory containing svn log information
 #' @param pattern pattern (default: "_log_")
 #' @return data frame with svn log data 
+#' @importFrom kwb.utils resetRowNames
 #' @export
 readLogFilesInDirectory <- function(logdir, pattern = "_log_")
 {
+  # Get paths to log files
   logfiles <- dir(logdir, pattern = pattern, full.names = TRUE)
   
-  loginfo <- lapply(logfiles, FUN = readLogFile)
+  # Read all log files and bind their content together
+  logdata <- do.call(rbind, lapply(logfiles, readLogFile))
+
+  # Generate POSIXct timestamps from "date" column  
+  times_utc <- substr(kwb.utils::selectColumns(logdata, "date"), 1, 19) %>%
+    as.POSIXct(format = "%Y-%m-%dT%H:%M:%S", tz = "UTC")
+    
+  # Set column "dateTimeUTC"
+  logdata$dateTimeUTC <- times_utc
   
-  logdata <- do.call(rbind, args = loginfo)
-  
-  logdata$dateTimeUTC <- as.POSIXct(
-    substr(logdata$date, 1, 19), format = "%Y-%m-%dT%H:%M:%S", tz = "UTC"
-  )
-  
-  row.names(logdata) <- NULL
-  
-  logdata[order(logdata$dateTimeUTC), ]
+  # Order rows by time and renumber rows
+  kwb.utils::resetRowNames(logdata[order(times_utc), ])
 }
 
 # readLogFile ------------------------------------------------------------------
@@ -27,44 +30,39 @@ readLogFilesInDirectory <- function(logdir, pattern = "_log_")
 #'
 #' @param logfile logfile
 #' @return logfile
-#' @importFrom  kwb.utils safeRowBind
+#' @importFrom dplyr bind_rows
 #' @importFrom XML xmlTreeParse xmlChildren
 #' @export
 
 readLogFile <- function(logfile)
 {
-  cat("Reading", basename(logfile), "... ")
-  
-  xmllines <- readLines(logfile)
-  
-  indices <- c(grep("^<\\?xml", xmllines), length(xmllines) + 1)
-  
-  xmls <- list()
-  
-  for (i in seq_len(length(indices) - 1)) {
-    xmls[[i]] <- xmllines[seq(indices[i], indices[i+1] - 1)]
-  }
-  
-  xmltexts <- sapply(xmls, function(x) paste(x, collapse = "\n"))
-  
-  xmltexts <- xmltexts[!duplicated(xmltexts)]
-  
-  commitInfo <- NULL
-  
-  for (xmltext in xmltexts) {
+  kwb.utils::catAndRun(
     
-    xmltree <- XML::xmlTreeParse(xmltext, asText = TRUE)
+    messageText = paste0("Reading", basename(logfile)), 
     
-    commits <- XML::xmlChildren(xmltree$doc$children$lists)
-    
-    numberOfCommits <- length(commits)  
-    
-    commitInfo <- kwb.utils::safeRowBind(commitInfo, extractCommitInfo(commits))
-  }
-  
-  cat("ok.\n")
-  
-  commitInfo  
+    expr = {
+      
+      xmllines <- readLines(logfile)
+      
+      indices <- c(grep("^<\\?xml", xmllines), length(xmllines) + 1)
+      
+      xmls <- lapply(seq_len(length(indices) - 1), function(i) {
+        
+        xmllines[seq(indices[i], indices[i + 1] - 1)]
+      })
+      
+      xmltexts <- sapply(xmls, paste, collapse = "\n")
+      
+      xmltexts <- xmltexts[! duplicated(xmltexts)]
+      
+      dplyr::bind_rows(lapply(xmltexts, function(xmltext) {
+        
+        xmltree <- XML::xmlTreeParse(xmltext, asText = TRUE)
+        
+        extractCommitInfo(XML::xmlChildren(xmltree$doc$children$lists))
+      }))
+    }
+  )  
 }
 
 # extractCommitInfo ------------------------------------------------------------
@@ -75,19 +73,10 @@ readLogFile <- function(logfile)
 #'
 #' @return commit infos
 #' @export
-#' @importFrom kwb.utils safeRowBind
+#' @importFrom dplyr bind_rows
 extractCommitInfo <- function(commits)
 {  
-  i <- 1
-  
-  commitInfo <- NULL
-  
-  for (commit in commits) {
-    commitInfo <- kwb.utils::safeRowBind(commitInfo, extractCommit(commit))
-    i <- i + 1
-  }
-  
-  commitInfo
+  dplyr::bind_rows(lapply(commits, extractCommit))
 }
 
 # extractCommit ----------------------------------------------------------------
@@ -95,35 +84,24 @@ extractCommitInfo <- function(commits)
 #'
 #' @param commit commit number
 #' @importFrom XML xmlChildren xmlAttrs
+#' @importfrom dplyr bind_rows
+#' @importFrom kwb.utils noFactorDataFrame
 #' @return data frame with commit information
 #' @export
 #' 
 extractCommit <- function(commit)
 {
-  result <- NULL
-  
-  entries <- xmlChildren(commit)
-  
-  for (entry in entries) {
+  dplyr::bind_rows(lapply(xmlChildren(commit), function(x) {
     
-    entryParts <- XML::xmlChildren(entry)
+    parts <- XML::xmlChildren(x)
     
-    basicinfo <- data.frame(
-      revision = as.integer(XML::xmlAttrs(entryParts$commit)["revision"]),
-      kind = XML::xmlAttrs(entry)["kind"],
-      stringsAsFactors = FALSE
+    info <- kwb.utils::noFactorDataFrame(
+      revision = as.integer(XML::xmlAttrs(parts$commit)["revision"]),
+      kind = XML::xmlAttrs(x)["kind"]
     )
     
-    result <- rbind(
-      result, 
-      cbind(
-        basicinfo,
-        extractEntryNameAndCommit(entryParts$name, entryParts$commit)
-      )
-    )
-  }
-  
-  result
+    cbind(info, extractEntryNameAndCommit(parts$name, parts$commit))
+  }))
 }
 
 # extractEntryNameAndCommit ----------------------------------------------------
@@ -132,16 +110,19 @@ extractCommit <- function(commit)
 #' @param entryCommit entryCommit
 #' @return data.frame with name, author and data
 #' @export
-#' @importFrom XML xmlChildren xmlValue 
+#' @importFrom XML xmlChildren xmlValue
+#' @importFrom kwb.utils noFactorDataFrame
 extractEntryNameAndCommit <- function(entryName, entryCommit)
 {
   commitInfo <- XML::xmlChildren(entryCommit)
   
-  data.frame(
-    name = XML::xmlValue(xmlChildren(entryName)$text),
-    author = XML::xmlValue(xmlChildren(commitInfo$author)$text),
-    date = XML::xmlValue(xmlChildren(commitInfo$date)$text),
-    stringsAsFactors = FALSE
+  # Define helper function
+  childrens_text_value <- function(x) XML::xmlValue(xmlChildren(x)$text)
+  
+  kwb.utils::noFactorDataFrame(
+    name = childrens_text_value(entryName),
+    author = childrens_text_value(commitInfo$author),
+    date = childrens_text_value(commitInfo$date)
   )
 }
 
@@ -155,21 +136,21 @@ extractEntryNameAndCommit <- function(entryName, entryCommit)
 #' @return string to svn repo with login
 #' @export
 
-default_repo <- function(root_dir = "svn/kwb", 
-                         username = getOption("svn_username"), 
-                         password = getOption("svn_password"),
-                         serverip = getOption("svn_serverip")) {
-  
- sprintf("http://%s:%s@%s/%s",  username, password, serverip, root_dir) 
-
-
+default_repo <- function(
+  root_dir = "svn/kwb", 
+  username = getOption("svn_username"), 
+  password = getOption("svn_password"),
+  serverip = getOption("svn_serverip")
+)
+{
+  sprintf("http://%s:%s@%s/%s",  username, password, serverip, root_dir)
 }
 
 #' Default SVN Repository RScripts
 #' @export
 
-default_rscripts <- function() {
-  
+default_rscripts <- function()
+{
   default_repo(root_dir = "svn/kwb/R_Development/trunk/RScripts")
 }
 
@@ -177,21 +158,14 @@ default_rscripts <- function() {
 #'
 #' @export
 
-get_rscript_paths <- function() {
-  
-  cmd <- sprintf("svn ls -R %s", 
-                 default_rscripts()
-                 )
-  
-  paths <- shell(cmd = cmd,intern = TRUE) 
-  
-  paths %>% 
-  stringr::str_subset("/$", negate = TRUE) %>%  
-  stringr::str_subset("\\.[rR]([mM][dD])?$") %>% 
-  stringr::str_subset("\\.$", negate = TRUE)
+get_rscript_paths <- function()
+{
+  sprintf("svn ls -R %s", default_rscripts()) %>%
+    shell(intern = TRUE) %>% 
+    stringr::str_subset("/$", negate = TRUE) %>%  
+    stringr::str_subset("\\.[rR]([mM][dD])?$") %>% 
+    stringr::str_subset("\\.$", negate = TRUE)
 }
-
-
 
 # getRevisionInfo---------------------------------------------------------------
 #' Get Revision Information
@@ -199,48 +173,44 @@ get_rscript_paths <- function() {
 #' @param revision revision number
 #' @param tDir target directory
 #' @param repo repository
-#' @param logs if TRUE logs info is extracted, if FALSE size info (default: TRUE)
+#' @param logs if TRUE logs info is extracted, if FALSE size info (default:
+#'   TRUE)
 #' @param dbg debug messages (default: TRUE)
 #' @return revision infos
 #' @export
-getRevisionInfo <- function (revision,
-                             tDir = tempdir(),
-                             repo = default_repo(), 
-                             logs = TRUE,
-                             ### if TRUE logs info is extracted, if FALSE size info
-                             dbg = TRUE
-) {
-  
-  recursive <- "--recursive"
-  fPrefix <- "ente"
-  sizeToGrep <- "| grep size"
-  label <- "size"
+#' @importFrom kwb.utils catAndRun
+getRevisionInfo <- function(
+  revision, tDir = tempdir(), repo = default_repo(), logs = TRUE, dbg = TRUE
+)
+{
   if (logs) {
+    
     recursive <- ""
     fPrefix <- paste0(fPrefix, "_log")
     sizeToGrep <- ""
     label <- "commit info"
-  }  
+    
+  } else {
+    
+    recursive <- "--recursive"
+    fPrefix <- "ente"
+    sizeToGrep <- "| grep size"
+    label <- "size"
+  }
   
-  tName <- sprintf("%s_r%d.txt", fPrefix, revision)
-  tPath <- file.path(tDir, tName)
+  target_path <- file.path(tDir, sprintf("%s_r%d.txt", fPrefix, revision))
   
+  cmd <- sprintf(
+    "svn list --xml %s -r%d %s %s > \"%s\"", 
+    recursive, revision, repo, sizeToGrep, target_path
+  )
   
-  cmd <- sprintf("svn list --xml %s -r%d %s %s > \"%s\"", 
-                 recursive,
-                 revision,
-                 repo, 
-                 sizeToGrep, 
-                 tPath)
+  msg <- sprintf(
+    "Get '%s' of r %d from repo %s ...",  label, revision, repo
+  )
   
-  msg <- sprintf("Get '%s' of r %d from repo %s ...",  
-                 label, 
-                 revision, 
-                 repo)
-  if (dbg) cat(msg)
-  shell(cmd = cmd )
-  if (dbg) cat("Done!\n") 
-  
+  kwb.utils::catAndRun(dbg = dbg, messageText = msg, expr = shell(cmd = cmd))
+
   tDir
 }
 
@@ -256,21 +226,16 @@ getRevisionInfo <- function (revision,
 #' @return writes files with repo log info into target directory and returns 
 #' path to target directory 
 #' @export
-getRepoInfo <- function (currentRevision = 1920, 
-                         startRevision = 2, 
-                         tDir = tempdir(),
-                         repo = default_repo(), 
-                         logs = TRUE, 
-                         dbg = TRUE) {
-  
+getRepoInfo <- function(
+  currentRevision = 1920, startRevision = 2, tDir = tempdir(), 
+  repo = default_repo(), logs = TRUE, dbg = TRUE
+)
+{
   for (i in  startRevision:currentRevision) { 
-    getRevisionInfo(revision = i, 
-                    tDir = tDir, 
-                    repo = repo,
-                    logs = logs, 
-                    dbg = dbg)
     
+    getRevisionInfo(i, tDir = tDir, repo = repo, logs = logs, dbg = dbg)
   }
+  
   tDir
 }
 
@@ -283,20 +248,22 @@ getRepoInfo <- function (currentRevision = 1920,
 #' @export
 #' @importFrom plyr rbind.fill
 #' 
-readSizeFiles <- function (fDir,
-                           fPattern = "ente_r", 
-                           dbg = FALSE) {
-  
+readSizeFiles <- function (fDir, fPattern = "ente_r", dbg = FALSE) 
+{
   x <- list()
   x$size <- data.frame()
   x$sizePerFile <- NULL
   
-  files <- dir(fDir,pattern = fPattern, full.names = TRUE)
-  fileNames <- dir(fDir,pattern = fPattern, full.names = FALSE)
+  files <- dir(fDir, pattern = fPattern, full.names = TRUE)
+  fileNames <- dir(fDir, pattern = fPattern, full.names = FALSE)
   revisions <- as.numeric(gsub(pattern = "ente_r|.txt", "", fileNames))
-  for (id in seq_len(length(files))) {
+  
+  for (id in seq_along(files)) {
+    
     revision <- revisions[id]
-    if (dbg) cat(sprintf("R %4d : ", revision))
+    
+    kwb.utils::catIf(dbg, sprintf("R %4d : ", revision))
+    
     fileSize <- readLines(con = files[id]) 
     condition <- grep(pattern = "<size>|</size>", x = fileSize)
     fileSize <- fileSize[condition]
@@ -304,19 +271,25 @@ readSizeFiles <- function (fDir,
     sizes <- as.numeric(gsub("<size>|</size>", replacement = "", x = fileSize))
     
     ### convert from byte to  MB
-    sizesInMB <- sizes * 10^-6
+    sizesInMB <- sizes / (1024^2)
     x$sizePerFile[[revision]] <- sizesInMB
     
-    size  <- data.frame(revision=revision, 
-                        sumMB = sum(sizesInMB, na.rm=TRUE),
-                        maxMB = max(sizesInMB, na.rm=TRUE))
+    size  <- data.frame(
+      revision = revision, 
+      sumMB = sum(sizesInMB, na.rm = TRUE),
+      maxMB = max(sizesInMB, na.rm = TRUE)
+    )
+    
     x$size <- plyr::rbind.fill(x$size, size)
     
-    if (dbg) cat(sprintf("%6.3f (MB) max: %6.3f (MB)\n", size$sumMB , size$maxMB))
+    kwb.utils::catIf(dbg, sprintf(
+      "%6.3f (MB) max: %6.3f (MB)\n", size$sumMB , size$maxMB
+    ))
   }
   
-  x$size <- x$size[order(x$size$revision),]
-  return(x)
+  x$size <- x$size[order(x$size$revision), ]
+  
+  x
 }
 
 #' Read SVN History For Files
@@ -328,116 +301,35 @@ readSizeFiles <- function (fDir,
 #' @return writes history files to target directory and returns target directory
 #' @export
 #' @importFrom fs dir_exists dir_create
-read_files_history <- function(file_paths = get_rscript_paths(), 
-                               repo = default_rscripts(), 
-                               tdir = tempdir(), dbg = TRUE) {
-
+read_files_history <- function(
+  file_paths = get_rscript_paths(), 
+  repo = default_rscripts(), 
+  tdir = tempdir(), 
+  dbg = TRUE
+)
+{
   target_dirs <- file.path(tdir, unique(dirname(file_paths)))
   
   fs::dir_create(target_dirs[! file.exists(target_dirs)], recursive = TRUE)
-
-sapply(file_paths, FUN = function(file_path) {  
-fpath <- file.path(repo, file_path)
-
-
-cmd <- sprintf("svn log --diff %s > \"%s\"", 
-               file.path(repo, file_path),
-               file.path(tdir, file_path)
-               )
-
-msg <- sprintf("Get '%s' from repo %s and export to %s",  
-               file_path, 
-               repo,
-               tdir)
-
-if (dbg) cat(msg)
-shell(cmd = cmd )
-if (dbg) cat("Done!\n") 
-})
-tdir
-}
-
-#' Read Histories
-#'
-#' @param history_dir directory with history files (as created with 
-# 'read_files_history() )
-#' @return data.frame with columns
-#' @export
-#' @importFrom rlang .data
-#' @importFrom dplyr mutate bind_rows 
-#' @importFrom stringr str_detect str_subset str_remove str_split
-#' @importFrom fs dir_info
-
-read_histories <- function(history_dir) {
   
-  history_paths <- fs::dir_info(history_dir,
-                                recursive = TRUE, 
-                                all = FALSE, 
-                                type = "file")$path
-  
-  
-  result <- lapply(history_paths, function(history_path) {
-    print(history_path)
-
-    history_script <- readLines(history_path)
+  sapply(file_paths, FUN = function(file_path) {  
+    fpath <- file.path(repo, file_path)
     
+    cmd <- sprintf(
+      "svn log --diff %s > \"%s\"", 
+      file.path(repo, file_path), file.path(tdir, file_path)
+    )
     
-    author_start <- which(stringr::str_detect(history_script, 
-                                              pattern = "^r[0-9]{4} \\| "))
-
-    start <- which(stringr::str_detect(history_script, pattern = "^==========="))
+    msg <- sprintf(
+      "Get '%s' from repo %s and export to %s", file_path, repo, tdir
+    )
     
-    end <- c(which(stringr::str_detect(history_script, 
-                                       pattern = "^-------------"))[-1])
+    if (dbg) cat(msg)
+    shell(cmd = cmd )
+    if (dbg) cat("Done!\n") 
     
-    
-    if(length(author_start) > length(start)) {
-      n_rep <- length(author_start) - length(start)
-      
-      start <- c(start, rep(author_start[length(author_start)],n_rep))
-    }
-    if(length(author_start) > length(end)) {
-      n_rep <- length(author_start) - length(end)
-      
-      end <- c(end, rep(author_start[length(author_start)],n_rep))
-    }
-    
-    if(length(author_start) < length(end)) {
-      n_drop <- length(end) - length(author_start) 
-      end <- end[1:(length(end)-n_drop)]
-    }
-    
-    hist_log <- stringr::str_subset(history_script, pattern = "^r[0-9]{4} \\| ") %>% 
-      stringr::str_split(pattern = "\\s*\\|\\s*",n = 4, simplify = TRUE)  %>% 
-      as.data.frame()
-    
-    names(hist_log) <- c("revision", "username", "datetime", "lines_comment")
-    
-    hist_log_df <- hist_log %>%  
-      dplyr::mutate(
-        file = basename(history_path),
-        revision = as.integer(stringr::str_remove(.data$revision, "^r")), 
-        datetime = stringr::str_sub(.data$datetime, 1, 25),
-        lines_comment = as.integer(stringr::str_remove(.data$lines_comment, "\\slines$")),
-        lines_start = start, 
-        lines_end = end, 
-        lines_added = NA_integer_,
-        lines_deleted = NA_integer_)
-    
-    for(i in seq_len(nrow(hist_log_df))) {
-     sel_lines <- history_script[hist_log_df$lines_start[i]:hist_log_df$lines_end[i]]
-     added <- sum(stringr::str_detect(sel_lines, pattern = "^+"))
-     deleted <- sum(stringr::str_detect(sel_lines, pattern = "^-"))
-                    
-     hist_log_df$lines_added[i] <- ifelse(added > 0, added, NA_integer_)
-    hist_log_df$lines_deleted[i]  <- ifelse(deleted > 0, deleted, NA_integer_)
-    }
-    
-    hist_log_df
-  
   })
-
-  dplyr::bind_rows(result)
-
+  
+  tdir
 }
 
