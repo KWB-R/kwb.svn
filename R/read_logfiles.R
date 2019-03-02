@@ -8,15 +8,21 @@
 #' @export
 readLogFilesInDirectory <- function(logdir, pattern = "_log_")
 {
+  # Get paths to log files
   logfiles <- dir(logdir, pattern = pattern, full.names = TRUE)
   
+  # Read all log files and bind their content together
   logdata <- do.call(rbind, lapply(logfiles, readLogFile))
+
+  # Generate POSIXct timestamps from "date" column  
+  times_utc <- substr(kwb.utils::selectColumns(logdata, "date"), 1, 19) %>%
+    as.POSIXct(format = "%Y-%m-%dT%H:%M:%S", tz = "UTC")
+    
+  # Set column "dateTimeUTC"
+  logdata$dateTimeUTC <- times_utc
   
-  logdata$dateTimeUTC <- as.POSIXct(
-    substr(logdata$date, 1, 19), format = "%Y-%m-%dT%H:%M:%S", tz = "UTC"
-  )
-  
-  kwb.utils::resetRowNames(logdata[order(logdata$dateTimeUTC), ])
+  # Order rows by time and renumber rows
+  kwb.utils::resetRowNames(logdata[order(times_utc), ])
 }
 
 # readLogFile ------------------------------------------------------------------
