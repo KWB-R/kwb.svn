@@ -73,19 +73,10 @@ readLogFile <- function(logfile)
 #'
 #' @return commit infos
 #' @export
-#' @importFrom kwb.utils safeRowBind
+#' @importFrom dplyr bind_rows
 extractCommitInfo <- function(commits)
 {  
-  i <- 1
-  
-  commitInfo <- NULL
-  
-  for (commit in commits) {
-    commitInfo <- kwb.utils::safeRowBind(commitInfo, extractCommit(commit))
-    i <- i + 1
-  }
-  
-  commitInfo
+  dplyr::bind_rows(lapply(commits, extractCommit))
 }
 
 # extractCommit ----------------------------------------------------------------
