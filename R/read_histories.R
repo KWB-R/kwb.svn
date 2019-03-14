@@ -10,19 +10,26 @@
 #' @importFrom dplyr mutate bind_rows 
 #' @importFrom stringr str_detect str_subset str_remove str_split
 #' @importFrom fs dir_info
-
+#' @importFrom kwb.file remove_common_root
 read_histories <- function(history_dir)
 {
   path_info <- fs::dir_info(
     history_dir, recursive = TRUE, all = FALSE, type = "file"
   )
   
-  result <- lapply(path_info$path, function(file) {
+  files <- path_info$path
+  paths <- kwb.file::remove_common_root(dirname(files))
+  
+  result <- lapply(seq_along(files), function(i) {
     
-    #file <- path_info$path[1]
-    kwb.utils::catAndRun(paste("Reading", basename(file)), {
-      changes <- readLines(file)
-    })
+    file <- files[i]
+    path <- paths[i]
+    
+    #file <- path_info$path[2]
+    changes <- kwb.utils::catAndRun(
+      messageText = paste("Reading", basename(file)), 
+      expr = readLines(file)
+    )
     
     author_start_pattern <- "^r[0-9]{4} \\| "
     author_start <- which(stringr::str_detect(changes, author_start_pattern))
@@ -50,7 +57,7 @@ read_histories <- function(history_dir)
     # Split the revision header lines and prepare a revision summary data frame
     hist_log_df <- changes[author_start] %>%
       split_revision_lines() %>%
-      init_revision_summary(filename = basename(file), start = start, end = end)
+      init_revision_summary(file, path, start, end)
     
     for (i in seq_len(nrow(hist_log_df))) {
       
@@ -78,14 +85,18 @@ split_revision_lines <- function(x)
 }
 
 # init_revision_summary --------------------------------------------------------
-init_revision_summary <- function(hist_log, filename, start, end)
+
+#' Initialise Revision Summary
+#' @keywords internal
+init_revision_summary <- function(hist_log, file, path, start, end)
 {
   # Define helper function
   extract_int <- function(x, p) as.integer(stringr::str_remove(x, p))
-  
+
   hist_log %>%  
     dplyr::mutate(
-      file = filename,
+      file = basename(file),
+      path = path,
       revision = extract_int(.data$revision, "^r"), 
       datetime = stringr::str_sub(.data$datetime, 1, 25),
       lines_comment = extract_int(.data$lines_comment, "\\slines?$"),

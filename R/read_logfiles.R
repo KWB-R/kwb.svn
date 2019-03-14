@@ -84,7 +84,7 @@ extractCommitInfo <- function(commits)
 #'
 #' @param commit commit number
 #' @importFrom XML xmlChildren xmlAttrs
-#' @importfrom dplyr bind_rows
+#' @importFrom dplyr bind_rows
 #' @importFrom kwb.utils noFactorDataFrame
 #' @return data frame with commit information
 #' @export
