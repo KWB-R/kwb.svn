@@ -141,29 +141,19 @@
     <p>Default SVN Repository</p>
     </div>
 
-    <pre class="usage"><span class='fu'>default_repo</span>(<span class='kw'>root_dir</span> <span class='kw'>=</span> <span class='st'>"svn/kwb"</span>,
-  <span class='kw'>username</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/options.html'>getOption</a></span>(<span class='st'>"svn_username"</span>),
-  <span class='kw'>password</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/options.html'>getOption</a></span>(<span class='st'>"svn_password"</span>),
-  <span class='kw'>serverip</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/options.html'>getOption</a></span>(<span class='st'>"svn_serverip"</span>))</pre>
+    <pre class="usage"><span class='fu'>default_repo</span>(<span class='kw'>serverip</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/options.html'>getOption</a></span>(<span class='st'>"svn_serverip"</span>),
+  <span class='kw'>root_dir</span> <span class='kw'>=</span> <span class='st'>"svn/kwb"</span>)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>root_dir</th>
-      <td><p>root directory (default: "svn/kwb")</p></td>
-    </tr>
-    <tr>
-      <th>username</th>
-      <td><p>username for repo (default: getOption("svn_username") )</p></td>
-    </tr>
-    <tr>
-      <th>password</th>
-      <td><p>password for repo (default: getOption("svn_password") )</p></td>
-    </tr>
-    <tr>
       <th>serverip</th>
       <td><p>serverip for repo (default: getOption("svn_serverip") )</p></td>
+    </tr>
+    <tr>
+      <th>root_dir</th>
+      <td><p>root directory (default: "svn/kwb")</p></td>
     </tr>
     </table>
 
