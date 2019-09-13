@@ -55,7 +55,7 @@ read_histories <- function(history_dir)
     }
     
     if (length(start) > length(end)) {
-      n_drop <- length(end) - length(start) 
+      n_drop <- length(start) - length(end) 
       start <- start[1:(length(start)-n_drop)]
     }
     
