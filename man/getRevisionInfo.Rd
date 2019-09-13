@@ -14,7 +14,8 @@ getRevisionInfo(revision, tDir = tempdir(), repo = default_repo(),
 
 \item{repo}{repository}
 
-\item{logs}{if TRUE logs info is extracted, if FALSE size info (default: TRUE)}
+\item{logs}{if TRUE logs info is extracted, if FALSE size info (default:
+TRUE)}
 
 \item{dbg}{debug messages (default: TRUE)}
 }

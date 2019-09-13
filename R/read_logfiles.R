@@ -143,7 +143,11 @@ default_repo <- function(
   serverip = getOption("svn_serverip")
 )
 {
-  sprintf("http://%s:%s@%s/%s",  username, password, serverip, root_dir)
+  sprintf("http://%s/%s --username %s --password %s",  
+          serverip, 
+          root_dir, 
+          username, 
+          password)
 }
 
 #' Default SVN Repository RScripts
