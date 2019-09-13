@@ -14,7 +14,7 @@
 read_histories <- function(history_dir)
 {
   path_info <- fs::dir_info(
-    history_dir, recursive = TRUE, all = FALSE, type = "file"
+    history_dir, recurse = TRUE, all = FALSE, type = "file"
   )
   
   files <- path_info$path

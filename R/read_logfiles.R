@@ -198,7 +198,7 @@ getRevisionInfo <- function(
     
   } else {
     
-    recursive <- "--recurse"
+    recursive <- "--recursive"
     fPrefix <- "ente"
     sizeToGrep <- "| grep size"
     label <- "size"
@@ -316,7 +316,7 @@ read_files_history <- function(
 {
   target_dirs <- file.path(tdir, unique(dirname(file_paths)))
   
-  fs::dir_create(target_dirs[! file.exists(target_dirs)], recursive = TRUE)
+  fs::dir_create(target_dirs[! file.exists(target_dirs)], recurse = TRUE)
   
   sapply(file_paths, FUN = function(file_path) {  
 
