@@ -54,6 +54,12 @@ read_histories <- function(history_dir)
       end <- end[1:(length(end)-n_drop)]
     }
     
+    if (length(start) > length(end)) {
+      n_drop <- length(end) - length(start) 
+      start <- start[1:(length(start)-n_drop)]
+    }
+    
+    
     # Split the revision header lines and prepare a revision summary data frame
     hist_log_df <- changes[author_start] %>%
       split_revision_lines() %>%
