@@ -8,7 +8,7 @@ Helper Functions for analysing [Subversion](https://subversion.apache.org/) log 
 
 ## Installation
 
-```{r echo = TRUE, eval = FALSE}
+```r
 ###############################################################################
 ###  For a tutorial on how to install KWB-R packages see:
 ###  https://kwb-r.github.io/kwb.pkgbuild/articles/install.html 
