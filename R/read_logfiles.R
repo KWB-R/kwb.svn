@@ -129,26 +129,28 @@ extractEntryNameAndCommit <- function(entryName, entryCommit)
 
 #' Default SVN Repository
 #' 
-#' @param root_dir root directory (default: "svn/kwb")
-#' @param username username for repo (default: getOption("svn_username") )
-#' @param password password for repo (default: getOption("svn_password") )
 #' @param serverip serverip for repo (default: getOption("svn_serverip") )
+#' @param root_dir root directory (default: "svn/kwb")
 #' @return string to svn repo with login
 #' @export
 
 default_repo <- function(
-  root_dir = "svn/kwb", 
-  username = getOption("svn_username"), 
-  password = getOption("svn_password"),
-  serverip = getOption("svn_serverip")
+  serverip = getOption("svn_serverip"),
+  root_dir = "svn/kwb"
 )
 {
-  sprintf("http://%s/%s --username %s --password %s",  
+  sprintf("http://%s/%s",  
           serverip, 
-          root_dir, 
-          username, 
-          password)
+          root_dir)
+  
 }
+
+#' #' @param password password for repo (default: getOption("svn_password") )
+#' #' @param serverip serverip for repo (default: getOption("svn_serverip") )
+#' username = getOption("svn_username")
+#' password = getOption("svn_password"),
+#' --username %s --password 
+
 
 #' Default SVN Repository RScripts
 #' @export
@@ -317,8 +319,7 @@ read_files_history <- function(
   fs::dir_create(target_dirs[! file.exists(target_dirs)], recursive = TRUE)
   
   sapply(file_paths, FUN = function(file_path) {  
-    fpath <- file.path(repo, file_path)
-    
+
     cmd <- sprintf(
       "svn log --diff %s > \"%s\"", 
       file.path(repo, file_path), file.path(tdir, file_path)
