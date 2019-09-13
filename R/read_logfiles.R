@@ -196,7 +196,7 @@ getRevisionInfo <- function(
     
   } else {
     
-    recursive <- "--recursive"
+    recursive <- "--recurse"
     fPrefix <- "ente"
     sizeToGrep <- "| grep size"
     label <- "size"
