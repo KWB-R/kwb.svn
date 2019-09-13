@@ -43,7 +43,7 @@ histories_file_user <- histories %>%
 
 histories_per_user <- histories %>% 
   dplyr::group_by(username) %>% 
-  dplyr::summarise(n_changes = dplyr::nn(),
+  dplyr::summarise(n_changes = dplyr::n(),
                    datetime_min = min(datetime), 
                    datetime_max = max(datetime),
                    lines_comments = sum(lines_deleted), 
