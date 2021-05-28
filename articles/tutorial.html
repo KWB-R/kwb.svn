@@ -106,8 +106,8 @@
 <h2 class="hasAnchor">
 <a href="#logfiles" class="anchor"></a>Logfiles</h2>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="co"># Sys.setenv(SVN_IP = "svnip",</span>
-<span class="co">#            SVN_USER = "svn_username", </span>
+<code class="sourceCode R"><span class="co"># Sys.setenv(SVN_IP = NULL, # use saved TortoiseSVN user/password</span>
+<span class="co">#            SVN_USER = NULL, # use saved TortoiseSVN user/password </span>
 <span class="co">#            SVN_PW = "svn_password")</span>
 
 <span class="va">logdir</span> <span class="op">&lt;-</span>  <span class="fu"><a href="https://rdrr.io/r/base/file.path.html">file.path</a></span><span class="op">(</span><span class="fu">kwb.utils</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/kwb.utils/man/desktop.html">desktop</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"svn/log"</span><span class="op">)</span>
