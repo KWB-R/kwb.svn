@@ -9,6 +9,7 @@ getRevisionInfo(
   tDir = tempdir(),
   repo = default_repo(),
   logs = TRUE,
+  fPrefix = "ente",
   dbg = TRUE
 )
 }
@@ -21,6 +22,8 @@ getRevisionInfo(
 
 \item{logs}{if TRUE logs info is extracted, if FALSE size info (default:
 TRUE)}
+
+\item{fPrefix}{file prefix (default: "ente")}
 
 \item{dbg}{debug messages (default: TRUE)}
 }
