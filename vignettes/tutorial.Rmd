@@ -20,8 +20,8 @@ knitr::opts_chunk$set(
 ## Logfiles
 
 ```{r, eval = FALSE}
-# Sys.setenv(SVN_IP = "svnip",
-#            SVN_USER = "svn_username", 
+# Sys.setenv(SVN_IP = NULL, # use saved TortoiseSVN user/password
+#            SVN_USER = NULL, # use saved TortoiseSVN user/password 
 #            SVN_PW = "svn_password")
 
 logdir <-  file.path(kwb.utils::desktop(), "svn/log")
