@@ -4,16 +4,9 @@
 \alias{read_files_history}
 \title{Read SVN History For Files}
 \usage{
-read_files_history(
-  file_paths = get_rscript_paths(),
-  repo = default_rscripts(),
-  tdir = tempdir(),
-  dbg = TRUE
-)
+read_files_history(repo = default_rscripts(), tdir = tempdir(), dbg = TRUE)
 }
 \arguments{
-\item{file_paths}{relative paths to files (relative to repo path)}
-
 \item{repo}{path to repository (default: default_repo())}
 
 \item{tdir}{target directory (default: tempdir())}

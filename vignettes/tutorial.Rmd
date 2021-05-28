@@ -141,7 +141,13 @@ fs::dir_create(logdir)
 history_dir <-  file.path(kwb.utils::desktop(), "svn/history")
 fs::dir_create(history_dir)
 
-kwb.svn::read_files_history(tdir = history_dir)
+## use saved SVN password from Tortoise SVN
+repo_rscripts <- kwb.svn::default_repo(username = NULL,
+                                       password = NULL, 
+                                       root_dir = "svn/kwb/R_Development/trunk/RScripts")
+
+kwb.svn::read_files_history(tdir = history_dir,
+                            repo = repo_rscripts)
 
 histories <- kwb.svn::read_histories(history_dir)
 
