@@ -26,7 +26,7 @@ knitr::opts_chunk$set(
 
 logdir <-  file.path(kwb.utils::desktop(), "svn/log")
   
-  if(!exists(logdir)) dir.create(logdir, recursive = TRUE)
+fs::dir_create(logdir)
   ### 1)get infos from "ente"
   ### 1a) size info (warning takes ~ 36 hours!!!!)
   #   kwb.svn::getRepoInfo(tDir = logdir, startRevision = 2, currentRevision = 3,
@@ -138,7 +138,8 @@ logdir <-  file.path(kwb.utils::desktop(), "svn/log")
 ## Histories 
 
 ```{r, eval = FALSE}
-history_dir <-  file.path(kwb.utils::desktop(), "svn_rscripts")
+history_dir <-  file.path(kwb.utils::desktop(), "svn/history")
+fs::dir_create(history_dir)
 
 kwb.svn::read_files_history(tdir = history_dir)
 
