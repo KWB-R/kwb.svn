@@ -4,11 +4,19 @@
 \alias{default_repo}
 \title{Default SVN Repository}
 \usage{
-default_repo(serverip = getOption("svn_serverip"),
-  root_dir = "svn/kwb")
+default_repo(
+  serverip = Sys.getenv("SVN_IP"),
+  username = Sys.getenv("SVN_USER"),
+  password = Sys.getenv("SVN_PW"),
+  root_dir = "svn/kwb"
+)
 }
 \arguments{
-\item{serverip}{serverip for repo (default: getOption("svn_serverip") )}
+\item{serverip}{serverip for repo (default: Sys.getenv("SVN_IP") )}
+
+\item{username}{username for repo (default: Sys.getenv("SVN_USER"))}
+
+\item{password}{password for repo (default: Sys.getenv("SVN_PW"))}
 
 \item{root_dir}{root directory (default: "svn/kwb")}
 }

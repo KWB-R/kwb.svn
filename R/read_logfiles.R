@@ -129,27 +129,27 @@ extractEntryNameAndCommit <- function(entryName, entryCommit)
 
 #' Default SVN Repository
 #' 
-#' @param serverip serverip for repo (default: getOption("svn_serverip") )
+#' @param serverip serverip for repo (default: Sys.getenv("SVN_IP") )
+#' @param username username for repo (default: Sys.getenv("SVN_USER"))
+#' @param password password for repo (default: Sys.getenv("SVN_PW"))
 #' @param root_dir root directory (default: "svn/kwb")
 #' @return string to svn repo with login
 #' @export
 
 default_repo <- function(
-  serverip = getOption("svn_serverip"),
+  serverip = Sys.getenv("SVN_IP"),
+  username = Sys.getenv("SVN_USER"),
+  password = Sys.getenv("SVN_PW"), 
   root_dir = "svn/kwb"
 )
 {
-  sprintf("http://%s/%s",  
-          serverip, 
+  sprintf("http://%s:%s@%s/%s", 
+          username, 
+          password,
+          serverip,
           root_dir)
   
 }
-
-#' #' @param password password for repo (default: getOption("svn_password") )
-#' #' @param serverip serverip for repo (default: getOption("svn_serverip") )
-#' username = getOption("svn_username")
-#' password = getOption("svn_password"),
-#' --username %s --password 
 
 
 #' Default SVN Repository RScripts
@@ -181,12 +181,18 @@ get_rscript_paths <- function()
 #' @param repo repository
 #' @param logs if TRUE logs info is extracted, if FALSE size info (default:
 #'   TRUE)
+#' @param fPrefix file prefix (default: "ente") 
 #' @param dbg debug messages (default: TRUE)
 #' @return revision infos
 #' @export
 #' @importFrom kwb.utils catAndRun
 getRevisionInfo <- function(
-  revision, tDir = tempdir(), repo = default_repo(), logs = TRUE, dbg = TRUE
+  revision, 
+  tDir = tempdir(), 
+  repo = default_repo(), 
+  logs = TRUE, 
+  fPrefix = "ente", 
+  dbg = TRUE
 )
 {
   if (logs) {
@@ -199,7 +205,7 @@ getRevisionInfo <- function(
   } else {
     
     recursive <- "--recursive"
-    fPrefix <- "ente"
+    fPrefix <- fPrefix
     sizeToGrep <- "| grep size"
     label <- "size"
   }

@@ -3,7 +3,7 @@
 #' Read Histories
 #'
 #' @param history_dir directory with history files (as created with 
-# 'read_files_history() )
+#  \code{\link{read_files_history}}
 #' @return data.frame with columns
 #' @export
 #' @importFrom rlang .data

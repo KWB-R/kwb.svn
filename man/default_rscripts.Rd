@@ -2,20 +2,10 @@
 % Please edit documentation in R/read_logfiles.R
 \name{default_rscripts}
 \alias{default_rscripts}
-\title{#' @param password password for repo (default: getOption("svn_password") )
-#' @param serverip serverip for repo (default: getOption("svn_serverip") )
-username = getOption("svn_username")
-password = getOption("svn_password"),
---username %s --password 
-Default SVN Repository RScripts}
+\title{Default SVN Repository RScripts}
 \usage{
 default_rscripts()
 }
 \description{
-#' @param password password for repo (default: getOption("svn_password") )
-#' @param serverip serverip for repo (default: getOption("svn_serverip") )
-username = getOption("svn_username")
-password = getOption("svn_password"),
---username %s --password 
 Default SVN Repository RScripts
 }

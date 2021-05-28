@@ -4,8 +4,13 @@
 \alias{getRevisionInfo}
 \title{Get Revision Information}
 \usage{
-getRevisionInfo(revision, tDir = tempdir(), repo = default_repo(),
-  logs = TRUE, dbg = TRUE)
+getRevisionInfo(
+  revision,
+  tDir = tempdir(),
+  repo = default_repo(),
+  logs = TRUE,
+  dbg = TRUE
+)
 }
 \arguments{
 \item{revision}{revision number}

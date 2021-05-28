@@ -4,8 +4,14 @@
 \alias{getRepoInfo}
 \title{Get Repo Info}
 \usage{
-getRepoInfo(currentRevision = 1920, startRevision = 2,
-  tDir = tempdir(), repo = default_repo(), logs = TRUE, dbg = TRUE)
+getRepoInfo(
+  currentRevision = 1920,
+  startRevision = 2,
+  tDir = tempdir(),
+  repo = default_repo(),
+  logs = TRUE,
+  dbg = TRUE
+)
 }
 \arguments{
 \item{currentRevision}{latest SVN revision}
