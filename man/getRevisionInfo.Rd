@@ -4,8 +4,14 @@
 \alias{getRevisionInfo}
 \title{Get Revision Information}
 \usage{
-getRevisionInfo(revision, tDir = tempdir(), repo = default_repo(),
-  logs = TRUE, dbg = TRUE)
+getRevisionInfo(
+  revision,
+  tDir = tempdir(),
+  repo = default_repo(),
+  logs = TRUE,
+  fPrefix = "ente",
+  dbg = TRUE
+)
 }
 \arguments{
 \item{revision}{revision number}
@@ -14,7 +20,10 @@ getRevisionInfo(revision, tDir = tempdir(), repo = default_repo(),
 
 \item{repo}{repository}
 
-\item{logs}{if TRUE logs info is extracted, if FALSE size info (default: TRUE)}
+\item{logs}{if TRUE logs info is extracted, if FALSE size info (default:
+TRUE)}
+
+\item{fPrefix}{file prefix (default: "ente")}
 
 \item{dbg}{debug messages (default: TRUE)}
 }

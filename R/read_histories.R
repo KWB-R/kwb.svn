@@ -3,7 +3,7 @@
 #' Read Histories
 #'
 #' @param history_dir directory with history files (as created with 
-# 'read_files_history() )
+#  \code{\link{read_files_history}}
 #' @return data.frame with columns
 #' @export
 #' @importFrom rlang .data
@@ -14,7 +14,7 @@
 read_histories <- function(history_dir)
 {
   path_info <- fs::dir_info(
-    history_dir, recursive = TRUE, all = FALSE, type = "file"
+    history_dir, recurse = TRUE, all = FALSE, type = "file"
   )
   
   files <- path_info$path
@@ -53,6 +53,12 @@ read_histories <- function(history_dir)
       n_drop <- length(end) - length(author_start) 
       end <- end[1:(length(end)-n_drop)]
     }
+    
+    if (length(start) > length(end)) {
+      n_drop <- length(start) - length(end) 
+      start <- start[1:(length(start)-n_drop)]
+    }
+    
     
     # Split the revision header lines and prepare a revision summary data frame
     hist_log_df <- changes[author_start] %>%

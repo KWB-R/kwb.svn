@@ -4,7 +4,10 @@
 \alias{get_rscript_paths}
 \title{Default SVN Repository RScripts Paths}
 \usage{
-get_rscript_paths()
+get_rscript_paths(rscripts_path = default_rscripts())
+}
+\arguments{
+\item{rscripts_path}{default R scripts path default: \code{\link{default_rscripts}}}
 }
 \description{
 Default SVN Repository RScripts Paths

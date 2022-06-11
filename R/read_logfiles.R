@@ -129,22 +129,36 @@ extractEntryNameAndCommit <- function(entryName, entryCommit)
 
 #' Default SVN Repository
 #' 
+#' @param serverip serverip for repo (default: Sys.getenv("SVN_IP") )
+#' @param username username for repo (default: Sys.getenv("SVN_USER"))
+#' @param password password for repo (default: Sys.getenv("SVN_PW"))
 #' @param root_dir root directory (default: "svn/kwb")
-#' @param username username for repo (default: getOption("svn_username") )
-#' @param password password for repo (default: getOption("svn_password") )
-#' @param serverip serverip for repo (default: getOption("svn_serverip") )
 #' @return string to svn repo with login
+#' @importFrom kwb.utils isNullOrEmpty
 #' @export
 
 default_repo <- function(
-  root_dir = "svn/kwb", 
-  username = getOption("svn_username"), 
-  password = getOption("svn_password"),
-  serverip = getOption("svn_serverip")
+  serverip = Sys.getenv("SVN_IP"),
+  username = Sys.getenv("SVN_USER"),
+  password = Sys.getenv("SVN_PW"), 
+  root_dir = "svn/kwb"
 )
 {
-  sprintf("http://%s:%s@%s/%s",  username, password, serverip, root_dir)
+  
+  user_pw <- ifelse(
+         test = kwb.utils::isNullOrEmpty(username) | kwb.utils::isNullOrEmpty(password), 
+         yes = "", 
+         no = sprintf("%s:%s@", username, password)
+         )
+
+  
+  sprintf("http://%s%s/%s", 
+          user_pw, 
+          serverip,
+          root_dir)
+  
 }
+
 
 #' Default SVN Repository RScripts
 #' @export
@@ -155,12 +169,12 @@ default_rscripts <- function()
 }
 
 #' Default SVN Repository RScripts Paths
-#'
+#' @param rscripts_path default R scripts path default: \code{\link{default_rscripts}}
 #' @export
 
-get_rscript_paths <- function()
+get_rscript_paths <- function(rscripts_path = default_rscripts())
 {
-  sprintf("svn ls -R %s", default_rscripts()) %>%
+  sprintf("svn ls -R %s", rscripts_path) %>%
     shell(intern = TRUE) %>% 
     stringr::str_subset("/$", negate = TRUE) %>%  
     stringr::str_subset("\\.[rR]([mM][dD])?$") %>% 
@@ -175,12 +189,18 @@ get_rscript_paths <- function()
 #' @param repo repository
 #' @param logs if TRUE logs info is extracted, if FALSE size info (default:
 #'   TRUE)
+#' @param fPrefix file prefix (default: "ente") 
 #' @param dbg debug messages (default: TRUE)
 #' @return revision infos
 #' @export
 #' @importFrom kwb.utils catAndRun
 getRevisionInfo <- function(
-  revision, tDir = tempdir(), repo = default_repo(), logs = TRUE, dbg = TRUE
+  revision, 
+  tDir = tempdir(), 
+  repo = default_repo(), 
+  logs = TRUE, 
+  fPrefix = "ente", 
+  dbg = TRUE
 )
 {
   if (logs) {
@@ -193,7 +213,7 @@ getRevisionInfo <- function(
   } else {
     
     recursive <- "--recursive"
-    fPrefix <- "ente"
+    fPrefix <- fPrefix
     sizeToGrep <- "| grep size"
     label <- "size"
   }
@@ -291,45 +311,3 @@ readSizeFiles <- function (fDir, fPattern = "ente_r", dbg = FALSE)
   
   x
 }
-
-#' Read SVN History For Files
-#'
-#' @param file_paths relative paths to files (relative to repo path)
-#' @param repo path to repository (default: default_repo())
-#' @param tdir target directory (default: tempdir())
-#' @param dbg debug (default: TRUE)
-#' @return writes history files to target directory and returns target directory
-#' @export
-#' @importFrom fs dir_exists dir_create
-read_files_history <- function(
-  file_paths = get_rscript_paths(), 
-  repo = default_rscripts(), 
-  tdir = tempdir(), 
-  dbg = TRUE
-)
-{
-  target_dirs <- file.path(tdir, unique(dirname(file_paths)))
-  
-  fs::dir_create(target_dirs[! file.exists(target_dirs)], recursive = TRUE)
-  
-  sapply(file_paths, FUN = function(file_path) {  
-    fpath <- file.path(repo, file_path)
-    
-    cmd <- sprintf(
-      "svn log --diff %s > \"%s\"", 
-      file.path(repo, file_path), file.path(tdir, file_path)
-    )
-    
-    msg <- sprintf(
-      "Get '%s' from repo %s and export to %s", file_path, repo, tdir
-    )
-    
-    if (dbg) cat(msg)
-    shell(cmd = cmd )
-    if (dbg) cat("Done!\n") 
-    
-  })
-  
-  tdir
-}
-

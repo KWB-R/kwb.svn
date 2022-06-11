@@ -17,44 +17,16 @@ knitr::opts_chunk$set(
 ```
 
 
+## Logfiles
 
 ```{r, eval = FALSE}
-  info <- read.csv("svn.csv")
+# Sys.setenv(SVN_IP = NULL, # use saved TortoiseSVN user/password
+#            SVN_USER = NULL, # use saved TortoiseSVN user/password 
+#            SVN_PW = "svn_password")
 
-  options(svn_username = info$svn_username, 
-          svn_password = info$svn_password, 
-          svn_serverip = info$svn_serverip)
-
-history_dir <-  file.path(kwb.utils::desktop(), "svn_rscripts")
-
-kwb.svn::read_files_history(tdir = history_dir)
-
-histories <- kwb.svn::read_histories(history_dir)
-
-
-histories_file_user <- histories %>% 
-  dplyr::group_by(file, username) %>% 
-  dplyr::summarise(n_changes = dplyr::n(), 
-                   datetime_min = min(datetime), 
-                   datetime_max = max(datetime),
-                   lines_comments = sum(lines_deleted), 
-                   lines_deleted = sum(lines_deleted), 
-                   lines_added = sum(lines_added))
-
-histories_per_user <- histories %>% 
-  dplyr::group_by(username) %>% 
-  dplyr::summarise(n_changes = dplyr::nn(),
-                   datetime_min = min(datetime), 
-                   datetime_max = max(datetime),
-                   lines_comments = sum(lines_deleted), 
-                   lines_deleted = sum(lines_deleted), 
-                   lines_added = sum(lines_added))
+logdir <-  file.path(kwb.utils::desktop(), "svn/log")
   
-
-
-logdir <- file.path(kwb.utils::desktop(), "svn_log")
-  
-  if(!exists(logdir)) dir.create(logdir)
+fs::dir_create(logdir)
   ### 1)get infos from "ente"
   ### 1a) size info (warning takes ~ 36 hours!!!!)
   #   kwb.svn::getRepoInfo(tDir = logdir, startRevision = 2, currentRevision = 3,
@@ -63,10 +35,10 @@ logdir <- file.path(kwb.utils::desktop(), "svn_log")
   # kwb.svn::getRepoInfo(tDir = logdir, 
   #            logs = FALSE)
   
-  svn_repo <- kwb.svn::default_repo(root_dir = kwb.svn::default_rscripts(),
+  svn_repo <- kwb.svn::default_repo()
   kwb.svn::getRepoInfo(tDir = logdir, 
-                       startRevision = 1024, 
-                       currentRevision = 1200, #6294,
+                       startRevision = 2, 
+                       currentRevision = 6749, #6749,
                        repo = svn_repo) 
   
   logdata <- kwb.svn::readLogFilesInDirectory(logdir)
@@ -161,4 +133,41 @@ logdir <- file.path(kwb.utils::desktop(), "svn_log")
   
   
   aggregate(revision ~ team, data = res,FUN = sum)
+```
+
+## Histories 
+
+```{r, eval = FALSE}
+history_dir <-  file.path(kwb.utils::desktop(), "svn/history")
+fs::dir_create(history_dir)
+
+## use saved SVN password from Tortoise SVN
+repo_rscripts <- kwb.svn::default_repo(username = NULL,
+                                       password = NULL, 
+                                       root_dir = "svn/kwb/R_Development/trunk/RScripts")
+
+kwb.svn::read_files_history(tdir = history_dir,
+                            repo = repo_rscripts)
+
+histories <- kwb.svn::read_histories(history_dir)
+
+
+histories_file_user <- histories %>% 
+  dplyr::group_by(file, username) %>% 
+  dplyr::summarise(n_changes = dplyr::n(), 
+                   datetime_min = min(datetime), 
+                   datetime_max = max(datetime),
+                   lines_comments = sum(lines_deleted), 
+                   lines_deleted = sum(lines_deleted), 
+                   lines_added = sum(lines_added))
+
+histories_per_user <- histories %>% 
+  dplyr::group_by(username) %>% 
+  dplyr::summarise(n_changes = dplyr::n(),
+                   datetime_min = min(datetime), 
+                   datetime_max = max(datetime),
+                   lines_comments = sum(lines_deleted), 
+                   lines_deleted = sum(lines_deleted), 
+                   lines_added = sum(lines_added))
+  
 ```
