@@ -6,3 +6,4 @@ inst/doc
 
 # and deploys the website to "gh-pages" branch
 docs/.*
+docs

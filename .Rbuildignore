@@ -11,3 +11,4 @@
 ^\.Rproj\.user$
 ^R/\.setup\.R$
 ^\.github$
+^pkgdown$
